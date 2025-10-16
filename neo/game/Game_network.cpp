@@ -574,7 +574,8 @@ void idGameLocal::ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &ms
 	}
 
 	// free too old snapshots
-	FreeSnapshotsOlderThanSequence( clientNum, sequence - 64 );
+	int maxPredictionFrames = (net_clientMaxPrediction.GetInteger() * gameLocal.gameHz) / 1000;
+	FreeSnapshotsOlderThanSequence( clientNum, sequence - maxPredictionFrames );
 
 	// allocate new snapshot
 	snapshot = snapshotAllocator.Alloc();
@@ -933,7 +934,7 @@ void idGameLocal::UpdateLagometer( int aheadOfServer, int dupeUsercmds ) {
 		for ( i = 0; i < LAGO_HEIGHT; i++ ) {
 			lagometer[i][j][0] = lagometer[i][j][1] = lagometer[i][j][2] = lagometer[i][j][3] = 0;
 		}
-		ahead = idMath::Rint( (float)aheadOfServer / 16.0f );
+		ahead = idMath::Rint( (float)aheadOfServer / (1000.0f / gameLocal.gameHz) );
 		if ( ahead >= 0 ) {
 			for ( i = 2 * Max( 0, 5 - ahead ); i < 2 * 5; i++ ) {
 				lagometer[i][j][1] = 255;
