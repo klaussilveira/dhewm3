@@ -526,6 +526,7 @@ public:
 
 private:
 	jointHandle_t			hipJoint;
+	jointHandle_t			waistJoint;
 	jointHandle_t			chestJoint;
 	jointHandle_t			headJoint;
 

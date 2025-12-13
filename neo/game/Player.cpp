@@ -1010,6 +1010,7 @@ idPlayer::idPlayer() {
 	firstPersonViewAxis		= mat3_identity;
 
 	hipJoint				= INVALID_JOINT;
+	waistJoint              = INVALID_JOINT;
 	chestJoint				= INVALID_JOINT;
 	headJoint				= INVALID_JOINT;
 
@@ -1338,6 +1339,12 @@ void idPlayer::Init( void ) {
 	hipJoint = animator.GetJointHandle( value );
 	if ( hipJoint == INVALID_JOINT ) {
 		gameLocal.Error( "Joint '%s' not found for 'bone_hips' on '%s'", value, name.c_str() );
+	}
+
+	value = spawnArgs.GetString( "bone_waist", "" );
+	waistJoint = animator.GetJointHandle( value );
+	if ( waistJoint == INVALID_JOINT ) {
+		gameLocal.Error( "Joint '%s' not found for 'bone_waist' on '%s'", value, name.c_str() );
 	}
 
 	value = spawnArgs.GetString( "bone_chest", "" );
@@ -1705,6 +1712,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	// don't bother saving dragEntity since it's a dev tool
 
 	savefile->WriteJoint( hipJoint );
+	savefile->WriteJoint( waistJoint );
 	savefile->WriteJoint( chestJoint );
 	savefile->WriteJoint( headJoint );
 
@@ -1934,6 +1942,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	dragEntity.Clear();
 
 	savefile->ReadJoint( hipJoint );
+	savefile->ReadJoint( waistJoint );
 	savefile->ReadJoint( chestJoint );
 	savefile->ReadJoint( headJoint );
 
@@ -5760,92 +5769,84 @@ idPlayer::AdjustBodyAngles
 ==============
 */
 void idPlayer::AdjustBodyAngles( void ) {
-	idMat3	lookAxis;
-	idMat3	legsAxis;
-	bool	blend;
-	float	diff;
-	float	frac;
-	float	upBlend;
-	float	forwardBlend;
-	float	downBlend;
+    idMat3  lookAxis;
+    idMat3  legsAxis;
+    idMat3  waistAxis;
+    bool    blend;
+    float   diff;
 
-	if ( health < 0 ) {
-		return;
-	}
+    if ( health < 0 ) {
+        return;
+    }
 
-	blend = true;
+    blend = true;
 
-	if ( !physicsObj.HasGroundContacts() ) {
-		idealLegsYaw = 0.0f;
-		legsForward = true;
-	} else if ( usercmd.forwardmove < 0 ) {
-		idealLegsYaw = idMath::AngleNormalize180( idVec3( -usercmd.forwardmove, usercmd.rightmove, 0.0f ).ToYaw() );
-		legsForward = false;
-	} else if ( usercmd.forwardmove > 0 ) {
-		idealLegsYaw = idMath::AngleNormalize180( idVec3( usercmd.forwardmove, -usercmd.rightmove, 0.0f ).ToYaw() );
-		legsForward = true;
-	} else if ( ( usercmd.rightmove != 0 ) && physicsObj.IsCrouching() ) {
-		if ( !legsForward ) {
-			idealLegsYaw = idMath::AngleNormalize180( idVec3( idMath::Abs( usercmd.rightmove ), usercmd.rightmove, 0.0f ).ToYaw() );
-		} else {
-			idealLegsYaw = idMath::AngleNormalize180( idVec3( idMath::Abs( usercmd.rightmove ), -usercmd.rightmove, 0.0f ).ToYaw() );
-		}
-	} else if ( usercmd.rightmove != 0 ) {
-		idealLegsYaw = 0.0f;
-		legsForward = true;
-	} else {
-		legsForward = true;
-		diff = idMath::Fabs( idealLegsYaw - legsYaw );
-		idealLegsYaw = idealLegsYaw - idMath::AngleNormalize180( viewAngles.yaw - oldViewYaw );
-		if ( diff < 0.1f ) {
-			legsYaw = idealLegsYaw;
-			blend = false;
-		}
-	}
+    if ( !physicsObj.HasGroundContacts() ) {
+        idealLegsYaw = 0.0f;
+        legsForward = true;
+    } else if ( usercmd.forwardmove < 0 ) {
+        idealLegsYaw = idMath::AngleNormalize180( idVec3( -usercmd.forwardmove, usercmd.rightmove, 0.0f ).ToYaw() );
+        legsForward = false;
+    } else if ( usercmd.forwardmove > 0 ) {
+        idealLegsYaw = idMath::AngleNormalize180( idVec3( usercmd.forwardmove, -usercmd.rightmove, 0.0f ).ToYaw() );
+        legsForward = true;
+    } else if ( ( usercmd.rightmove != 0 ) && physicsObj.IsCrouching() ) {
+        if ( !legsForward ) {
+            idealLegsYaw = idMath::AngleNormalize180( idVec3( idMath::Abs( usercmd.rightmove ), usercmd.rightmove, 0.0f ).ToYaw() );
+        } else {
+            idealLegsYaw = idMath::AngleNormalize180( idVec3( idMath::Abs( usercmd.rightmove ), -usercmd.rightmove, 0.0f ).ToYaw() );
+        }
+    } else if ( usercmd.rightmove != 0 ) {
+        idealLegsYaw = 0.0f;
+        legsForward = true;
+    } else {
+        legsForward = true;
+        diff = idMath::Fabs( idealLegsYaw - legsYaw );
+        idealLegsYaw = idealLegsYaw - idMath::AngleNormalize180( viewAngles.yaw - oldViewYaw );
+        if ( diff < 0.1f ) {
+            legsYaw = idealLegsYaw;
+            blend = false;
+        }
+    }
 
-	if ( !physicsObj.IsCrouching() ) {
-		legsForward = true;
-	}
+    if ( !physicsObj.IsCrouching() ) {
+        legsForward = true;
+    }
 
-	oldViewYaw = viewAngles.yaw;
+    oldViewYaw = viewAngles.yaw;
 
-	AI_TURN_LEFT = false;
-	AI_TURN_RIGHT = false;
-	if ( idealLegsYaw < -45.0f ) {
-		idealLegsYaw = 0;
-		AI_TURN_RIGHT = true;
-		blend = true;
-	} else if ( idealLegsYaw > 45.0f ) {
-		idealLegsYaw = 0;
-		AI_TURN_LEFT = true;
-		blend = true;
-	}
+    AI_TURN_LEFT = false;
+    AI_TURN_RIGHT = false;
+    if ( idealLegsYaw < -45.0f ) {
+        idealLegsYaw = 0;
+        AI_TURN_RIGHT = true;
+        blend = true;
+    } else if ( idealLegsYaw > 45.0f ) {
+        idealLegsYaw = 0;
+        AI_TURN_LEFT = true;
+        blend = true;
+    }
 
-	if ( blend ) {
-		legsYaw = legsYaw * 0.9f + idealLegsYaw * 0.1f;
-	}
-	legsAxis = idAngles( 0.0f, legsYaw, 0.0f ).ToMat3();
+    if ( blend ) {
+        legsYaw = legsYaw * 0.9f + idealLegsYaw * 0.1f;
+    }
+    legsAxis = idAngles( 0.0f, legsYaw, 0.0f ).ToMat3();
 	animator.SetJointAxis( hipJoint, JOINTMOD_WORLD, legsAxis );
 
-	// calculate the blending between down, straight, and up
-	frac = viewAngles.pitch / 90.0f;
-	if ( frac > 0.0f ) {
-		downBlend		= frac;
-		forwardBlend	= 1.0f - frac;
-		upBlend			= 0.0f;
-	} else {
-		downBlend		= 0.0f;
-		forwardBlend	= 1.0f + frac;
-		upBlend			= -frac;
-	}
+    if ( AI_TURN_LEFT || AI_TURN_RIGHT ) {
+        // do nothing, let animation play
+    } else {
+        waistAxis = idAngles( 0.0f, -legsYaw, 0.0f ).ToMat3();
+        animator.SetJointAxis( waistJoint, JOINTMOD_WORLD, waistAxis );
+    }
 
-	animator.CurrentAnim( ANIMCHANNEL_TORSO )->SetSyncedAnimWeight( 0, downBlend );
-	animator.CurrentAnim( ANIMCHANNEL_TORSO )->SetSyncedAnimWeight( 1, forwardBlend );
-	animator.CurrentAnim( ANIMCHANNEL_TORSO )->SetSyncedAnimWeight( 2, upBlend );
+    // Pitch the torso up and down based on the view pitch with a clamp
+    const float maxTorsoPitch = 60.0f;
+    const float torsoPitch = idMath::ClampFloat( -maxTorsoPitch, maxTorsoPitch, viewAngles.pitch );
 
-	animator.CurrentAnim( ANIMCHANNEL_LEGS )->SetSyncedAnimWeight( 0, downBlend );
-	animator.CurrentAnim( ANIMCHANNEL_LEGS )->SetSyncedAnimWeight( 1, forwardBlend );
-	animator.CurrentAnim( ANIMCHANNEL_LEGS )->SetSyncedAnimWeight( 2, upBlend );
+    // Apply the pitch on the chest joint so it layers on top of the base anim
+    lookAxis = idAngles( torsoPitch, 0.0f, 0.0f ).ToMat3();
+    animator.SetJointAxis( chestJoint, JOINTMOD_LOCAL, lookAxis );
 }
 
 /*
