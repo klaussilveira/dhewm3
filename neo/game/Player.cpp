@@ -5801,8 +5801,8 @@ void idPlayer::AdjustBodyAngles( void ) {
         legsForward = true;
     } else {
         legsForward = true;
-        diff = idMath::Fabs( idealLegsYaw - legsYaw );
         idealLegsYaw = idealLegsYaw - idMath::AngleNormalize180( viewAngles.yaw - oldViewYaw );
+        diff = idMath::Fabs( idealLegsYaw - legsYaw );
         if ( diff < 0.1f ) {
             legsYaw = idealLegsYaw;
             blend = false;
