@@ -118,6 +118,26 @@ void idMD5Mesh::ParseMesh( idLexer &parser, int numJoints, const idJointMat *joi
 	shader = declManager->FindMaterial( shaderName );
 
 	//
+	// parse mesh flags
+	//
+	if ( parser.CheckTokenString( "flags" ) ) {
+	    parser.ExpectTokenString( "{" );
+
+	    while ( parser.ReadToken( &token ) ) {
+	        if ( token == "}" ) {
+	            break;
+	        }
+
+	        // handle known flags
+	        if ( token == "vertexColor" ) {
+	            // do something in the future with the flags
+	        } else {
+	            parser.Warning( "unknown flag '%s' in flags block", token.c_str() );
+	        }
+	    }
+	}
+
+	//
 	// parse texture coordinates
 	//
 	parser.ExpectTokenString( "numverts" );
@@ -140,6 +160,18 @@ void idMD5Mesh::ParseMesh( idLexer &parser, int numJoints, const idJointMat *joi
 
 		firstWeightForVertex[ i ]	= parser.ParseInt();
 		numWeightsForVertex[ i ]	= parser.ParseInt();
+
+		// MD5 v11 may have per-vertex RGBA
+		if ( parser.ReadTokenOnLine( &token ) ) {
+		    if ( token == "(" ) {
+		        parser.UnreadToken( &token );
+		        float rgba[4];
+		        parser.Parse1DMatrix( 4, rgba );
+		        // do something with this later
+		    } else {
+		        parser.UnreadToken( &token );
+		    }
+		}
 
 		if ( !numWeightsForVertex[ i ] ) {
 			parser.Error( "Vertex without any joint weights." );
@@ -527,8 +559,8 @@ void idRenderModelMD5::LoadModel() {
 	parser.ExpectTokenString( MD5_VERSION_STRING );
 	version = parser.ParseInt();
 
-	if ( version != MD5_VERSION ) {
-		parser.Error( "Invalid version %d.  Should be version %d\n", version, MD5_VERSION );
+	if ( version < MD5_VERSION ) {
+		parser.Error( "Invalid version %d. Should be version 10 or 11.\n", version );
 	}
 
 	//
