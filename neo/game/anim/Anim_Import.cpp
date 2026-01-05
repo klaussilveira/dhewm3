@@ -215,7 +215,7 @@ bool idModelExport::ConvertMayaToMD5( void ) {
 				parser.ReadToken( &cmdLine );
 
 				// check the file time, scale, and version
-				if ( ( destTime >= sourceTime ) && ( version == MD5_VERSION ) && ( cmdLine == commandLine ) ) {
+				if ( ( destTime >= sourceTime ) && ( cmdLine == commandLine ) ) {
 					// don't convert it
 					return true;
 				}
