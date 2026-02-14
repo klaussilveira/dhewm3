@@ -13,6 +13,7 @@
 #include "LightEditor.h"
 #include "ParticleEditor.h"
 #include "PlayerEditor.h"
+#include "AFEditor.h"
 
 hcEditorMenuBar*	editorMenuBar = nullptr;
 static bool			editorModeActive = false;
@@ -133,6 +134,15 @@ void hcEditorMenuBar::DrawWindowMenu( void ) {
 			}
 		}
 
+		bool afEditorOpen = (mask & D3::ImGuiHooks::D3_ImGuiWin_AFEditor) != 0;
+		if ( ImGui::MenuItem( "AF Editor", "editAFs", afEditorOpen ) ) {
+			if ( afEditorOpen ) {
+				D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_AFEditor );
+			} else {
+				D3::ImGuiHooks::OpenWindow( D3::ImGuiHooks::D3_ImGuiWin_AFEditor );
+			}
+		}
+
 		ImGui::Separator();
 
 		if ( ImGui::MenuItem( "Translucent Windows", nullptr, translucent ) ) {
@@ -152,6 +162,7 @@ void hcEditorMenuBar::DrawWindowMenu( void ) {
 			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_ParticleEditor );
 			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_PlayerEditor );
 			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_EntityEditor );
+			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_AFEditor );
 		}
 
 		ImGui::EndMenu();
@@ -515,6 +526,10 @@ void Editor_Init( void ) {
 	if ( entityEditor == nullptr ) {
 		entityEditor = new hcEntityEditor();
 	}
+
+	if ( afEditor == nullptr ) {
+		afEditor = new hcAFEditor();
+	}
 }
 
 void Editor_Shutdown( void ) {
@@ -536,6 +551,11 @@ void Editor_Shutdown( void ) {
 	if ( entityEditor ) {
 		delete entityEditor;
 		entityEditor = nullptr;
+	}
+
+	if ( afEditor ) {
+		delete afEditor;
+		afEditor = nullptr;
 	}
 
 	if ( editorMenuBar ) {
@@ -569,6 +589,10 @@ void Editor_Draw( void ) {
 
 	if ( entityEditor ) {
 		entityEditor->Draw();
+	}
+
+	if ( afEditor ) {
+		afEditor->Draw();
 	}
 }
 

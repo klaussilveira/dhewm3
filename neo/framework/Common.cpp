@@ -1052,6 +1052,8 @@ idCommonLocal::InitTool
 */
 void idCommonLocal::InitTool( const toolFlag_t tool, const idDict *dict ) {
 #ifdef ID_ALLOW_IMGUI_TOOLS
+	Editor_SetModeActive( true );
+
 	if ( tool & EDITOR_SOUND ) {
 		SoundEditorInit( dict );
 	} else if ( tool & EDITOR_LIGHT ) {
@@ -1339,6 +1341,7 @@ Com_EditAFs_f
 static void Com_EditAFs_f( const idCmdArgs &args ) {
 	Editor_SetModeActive( true );
 	AFEditorInit( NULL );
+	cvarSystem->SetCVarInteger( "g_editEntityMode", 3 );
 }
 
 /*
@@ -2443,7 +2446,6 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "editor", Com_Editor_f, CMD_FL_TOOL, "launches the level editor Radiant" );
 	cmdSystem->AddCommand( "editSounds", Com_EditSounds_f, CMD_FL_TOOL, "launches the in-game Sound Editor" );
 	cmdSystem->AddCommand( "editDecls", Com_EditDecls_f, CMD_FL_TOOL, "launches the in-game Declaration Editor" );
-	cmdSystem->AddCommand( "editAFs", Com_EditAFs_f, CMD_FL_TOOL, "launches the in-game Articulated Figure Editor" );
 	cmdSystem->AddCommand( "editScripts", Com_EditScripts_f, CMD_FL_TOOL, "launches the in-game Script Editor" );
 	cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
 	cmdSystem->AddCommand( "editPDAs", Com_EditPDAs_f, CMD_FL_TOOL, "launches the in-game PDA Editor" );
@@ -2459,6 +2461,7 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "editParticles", Com_EditParticles_f, CMD_FL_TOOL, "launches the in-game Particle Editor" );
 	cmdSystem->AddCommand( "editPlayer", Com_EditPlayer_f, CMD_FL_TOOL, "launches the in-game Player Editor" );
 	cmdSystem->AddCommand( "editEntities", Com_EditEntities_f, CMD_FL_TOOL, "launches the in-game Entity Editor" );
+	cmdSystem->AddCommand( "editAFs", Com_EditAFs_f, CMD_FL_TOOL, "launches the in-game Articulated Figure Editor" );
 	cmdSystem->AddCommand( "toggleEditors", Com_ToggleEditors_f, CMD_FL_TOOL, "toggles editor UI" );
 #endif
 

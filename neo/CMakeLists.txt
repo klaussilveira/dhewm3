@@ -712,6 +712,7 @@ set(src_editor
     editor/LightEditor.cpp
     editor/ParticleEditor.cpp
     editor/PlayerEditor.cpp
+    editor/AFEditor.cpp
 )
 
 add_globbed_headers(src_editor "editor")

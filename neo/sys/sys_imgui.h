@@ -19,6 +19,7 @@ enum D3ImGuiWindow {
 	D3_ImGuiWin_LightEditor    = 16,
 	D3_ImGuiWin_PlayerEditor   = 32,
 	D3_ImGuiWin_EntityEditor   = 64,
+	D3_ImGuiWin_AFEditor       = 128,
 };
 
 #ifndef IMGUI_DISABLE

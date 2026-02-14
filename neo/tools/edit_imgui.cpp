@@ -27,10 +27,11 @@ void SoundEditorShutdown(void) {}
 void SoundEditorRun(void) {}
 
 void AFEditorInit(const idDict *spawnArgs) {
-  common->Printf(
-      "The articulated figure editor is still not implemented in imgui\n");
+  D3::ImGuiHooks::OpenWindow( D3::ImGuiHooks::D3_ImGuiWin_AFEditor );
 }
-void AFEditorShutdown(void) {}
+void AFEditorShutdown(void) {
+  D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_AFEditor );
+}
 void AFEditorRun(void) {}
 
 void ParticleEditorInit(const idDict *spawnArgs) {

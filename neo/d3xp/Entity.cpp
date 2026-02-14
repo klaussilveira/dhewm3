@@ -3811,6 +3811,7 @@ idEntity::ShowEditingDialog
 ===============
 */
 void idEntity::ShowEditingDialog( void ) {
+	common->InitTool( EDITOR_ENTITY, &spawnArgs );
 }
 
 /***********************************************************************

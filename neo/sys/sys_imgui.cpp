@@ -49,6 +49,7 @@ extern void Com_OpenCloseImGuiParticleEditor( bool open );
 extern void Com_OpenCloseImGuiLightEditor( bool open );
 extern void Com_OpenCloseImGuiPlayerEditor( bool open );
 extern void Com_OpenCloseImGuiEntityEditor( bool open );
+extern void Com_OpenCloseImGuiAFEditor( bool open );
 
 static idCVar imgui_scale( "imgui_scale", "-1.0", CVAR_SYSTEM|CVAR_FLOAT|CVAR_ARCHIVE, "factor to scale ImGUI menus by (-1: auto)" ); // TODO: limit values?
 
@@ -381,7 +382,7 @@ void NewFrame()
 			CloseWindow(D3_ImGuiWin_Demo);
 	}
 
-	if (openImguiWindows & (D3_ImGuiWin_EditorMode | D3_ImGuiWin_LightEditor | D3_ImGuiWin_ParticleEditor | D3_ImGuiWin_PlayerEditor | D3_ImGuiWin_EntityEditor)) {
+	if (openImguiWindows & (D3_ImGuiWin_EditorMode | D3_ImGuiWin_LightEditor | D3_ImGuiWin_ParticleEditor | D3_ImGuiWin_PlayerEditor | D3_ImGuiWin_EntityEditor | D3_ImGuiWin_AFEditor)) {
 		Editor_Draw();
 	}
 }
@@ -605,6 +606,9 @@ void OpenWindow( D3ImGuiWindow win )
 		case D3_ImGuiWin_EntityEditor:
 			Com_OpenCloseImGuiEntityEditor( true );
 			break;
+		case D3_ImGuiWin_AFEditor:
+			Com_OpenCloseImGuiAFEditor( true );
+			break;
 		// TODO: other windows that need explicit opening
 	}
 
@@ -631,6 +635,9 @@ void CloseWindow( D3ImGuiWindow win )
 			break;
 		case D3_ImGuiWin_EntityEditor:
 			Com_OpenCloseImGuiEntityEditor( false );
+			break;
+		case D3_ImGuiWin_AFEditor:
+			Com_OpenCloseImGuiAFEditor( false );
 			break;
 		// TODO: other windows that need explicit closing
 	}

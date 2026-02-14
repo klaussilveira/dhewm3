@@ -2600,6 +2600,31 @@ void idGameEdit::AF_UpdateEntities( const char *fileName ) {
 	}
 }
 
+
+/*
+================
+idGameEdit::AF_ActivatePhysics
+================
+*/
+void idGameEdit::AF_ActivatePhysics( const char *fileName ) {
+	idEntity *ent;
+	idAFEntity_Base *af;
+	idStr name;
+
+	name = fileName;
+	name.StripFileExtension();
+
+	// activate physics on any idAFEntity_Base that matches the given af name
+	for( ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+		if ( ent->IsType( idAFEntity_Base::Type ) ) {
+			af = static_cast<idAFEntity_Base *>(ent);
+			if ( name.Icmp( af->GetAFName() ) == 0 ) {
+				af->GetAFPhysics()->Activate();
+			}
+		}
+	}
+}
+
 /*
 ================
 idGameEdit::AF_UndoChanges

@@ -266,6 +266,7 @@ public:
 	// Articulated Figure calls for AF editor and Radiant.
 	virtual bool				AF_SpawnEntity( const char *fileName );
 	virtual void				AF_UpdateEntities( const char *fileName );
+	virtual void				AF_ActivatePhysics( const char *fileName );
 	virtual void				AF_UndoChanges( void );
 	virtual idRenderModel *		AF_CreateMesh( const idDict &args, idVec3 &meshOrigin, idMat3 &meshAxis, bool &poseIsSet );
 
