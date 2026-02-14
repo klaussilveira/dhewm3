@@ -76,6 +76,11 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		cachedModel = NULL;
 	}
 
+	// Update softeningRadii if stage count changed
+	if ( particleSystem && softeningRadii.Num() != particleSystem->stages.Num() ) {
+		SetSofteningRadii();
+	}
+
 	// this may be triggered by a model trace or other non-view related source, to which we should look like an empty model
 	if ( renderEntity == NULL || viewDef == NULL ) {
 		delete cachedModel;

@@ -59,6 +59,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "sys/sys_imgui.h"
 
 #include "framework/Common.h"
+#include "editor/Editor.h"
 
 #include "GameCallbacks_local.h"
 #include "Session_local.h" // DG: For FT_IsDemo/isDemo() hack
@@ -1050,7 +1051,7 @@ idCommonLocal::InitTool
 =================
 */
 void idCommonLocal::InitTool( const toolFlag_t tool, const idDict *dict ) {
-#ifdef ID_ALLOW_TOOLS
+#ifdef ID_ALLOW_IMGUI_TOOLS
 	if ( tool & EDITOR_SOUND ) {
 		SoundEditorInit( dict );
 	} else if ( tool & EDITOR_LIGHT ) {
@@ -1059,6 +1060,8 @@ void idCommonLocal::InitTool( const toolFlag_t tool, const idDict *dict ) {
 		ParticleEditorInit( dict );
 	} else if ( tool & EDITOR_AF ) {
 		AFEditorInit( dict );
+	} else if ( tool & EDITOR_ENTITY ) {
+		EntityEditorInit( dict );
 	}
 #endif
 }
@@ -1295,13 +1298,14 @@ static void PrintMemInfo_f( const idCmdArgs &args ) {
 	fileSystem->CloseFile( f );
 }
 
-#ifdef ID_ALLOW_TOOLS
+#ifdef ID_ALLOW_IMGUI_TOOLS
 /*
 ==================
 Com_EditLights_f
 ==================
 */
 static void Com_EditLights_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
 	LightEditorInit( NULL );
 	cvarSystem->SetCVarInteger( "g_editEntityMode", 1 );
 }
@@ -1312,6 +1316,7 @@ Com_EditSounds_f
 ==================
 */
 static void Com_EditSounds_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
 	SoundEditorInit( NULL );
 	cvarSystem->SetCVarInteger( "g_editEntityMode", 2 );
 }
@@ -1322,6 +1327,7 @@ Com_EditDecls_f
 ==================
 */
 static void Com_EditDecls_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
 	DeclBrowserInit( NULL );
 }
 
@@ -1331,6 +1337,7 @@ Com_EditAFs_f
 ==================
 */
 static void Com_EditAFs_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
 	AFEditorInit( NULL );
 }
 
@@ -1340,6 +1347,7 @@ Com_EditParticles_f
 ==================
 */
 static void Com_EditParticles_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
 	ParticleEditorInit( NULL );
 }
 
@@ -1349,6 +1357,7 @@ Com_EditScripts_f
 ==================
 */
 static void Com_EditScripts_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
 	ScriptEditorInit( NULL );
 }
 
@@ -1358,9 +1367,40 @@ Com_EditPDAs_f
 ==================
 */
 static void Com_EditPDAs_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
 	PDAEditorInit( NULL );
 }
-#endif // ID_ALLOW_TOOLS
+
+/*
+==================
+Com_EditPlayer_f
+==================
+*/
+static void Com_EditPlayer_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
+	PlayerEditorInit( NULL );
+}
+
+/*
+==================
+Com_EditEntities_f
+==================
+*/
+static void Com_EditEntities_f( const idCmdArgs &args ) {
+	Editor_SetModeActive( true );
+	EntityEditorInit( NULL );
+	cvarSystem->SetCVarInteger( "g_editEntityMode", 6 );
+}
+
+/*
+==================
+Com_ToggleEditors_f
+==================
+*/
+static void Com_ToggleEditors_f( const idCmdArgs &args ) {
+	Editor_ToggleMode();
+}
+#endif // ID_ALLOW_IMGUI_TOOLS
 
 /*
 ==================
@@ -2399,13 +2439,11 @@ void idCommonLocal::InitCommands( void ) {
 #endif
 
 #ifdef ID_ALLOW_TOOLS
-	// editors
+	// Windows MFC editors
 	cmdSystem->AddCommand( "editor", Com_Editor_f, CMD_FL_TOOL, "launches the level editor Radiant" );
-	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );
 	cmdSystem->AddCommand( "editSounds", Com_EditSounds_f, CMD_FL_TOOL, "launches the in-game Sound Editor" );
 	cmdSystem->AddCommand( "editDecls", Com_EditDecls_f, CMD_FL_TOOL, "launches the in-game Declaration Editor" );
 	cmdSystem->AddCommand( "editAFs", Com_EditAFs_f, CMD_FL_TOOL, "launches the in-game Articulated Figure Editor" );
-	cmdSystem->AddCommand( "editParticles", Com_EditParticles_f, CMD_FL_TOOL, "launches the in-game Particle Editor" );
 	cmdSystem->AddCommand( "editScripts", Com_EditScripts_f, CMD_FL_TOOL, "launches the in-game Script Editor" );
 	cmdSystem->AddCommand( "editGUIs", Com_EditGUIs_f, CMD_FL_TOOL, "launches the GUI Editor" );
 	cmdSystem->AddCommand( "editPDAs", Com_EditPDAs_f, CMD_FL_TOOL, "launches the in-game PDA Editor" );
@@ -2413,6 +2451,15 @@ void idCommonLocal::InitCommands( void ) {
 
 	//BSM Nerve: Add support for the material editor
 	cmdSystem->AddCommand( "materialEditor", Com_MaterialEditor_f, CMD_FL_TOOL, "launches the Material Editor" );
+#endif
+
+#ifdef ID_ALLOW_IMGUI_TOOLS
+	// imgui editors
+	cmdSystem->AddCommand( "editLights", Com_EditLights_f, CMD_FL_TOOL, "launches the in-game Light Editor" );
+	cmdSystem->AddCommand( "editParticles", Com_EditParticles_f, CMD_FL_TOOL, "launches the in-game Particle Editor" );
+	cmdSystem->AddCommand( "editPlayer", Com_EditPlayer_f, CMD_FL_TOOL, "launches the in-game Player Editor" );
+	cmdSystem->AddCommand( "editEntities", Com_EditEntities_f, CMD_FL_TOOL, "launches the in-game Entity Editor" );
+	cmdSystem->AddCommand( "toggleEditors", Com_ToggleEditors_f, CMD_FL_TOOL, "toggles editor UI" );
 #endif
 
 	cmdSystem->AddCommand( "printMemInfo", PrintMemInfo_f, CMD_FL_SYSTEM, "prints memory debugging data" );

@@ -504,7 +504,7 @@ idEditEntities::EntityIsSelectable
 */
 bool idEditEntities::EntityIsSelectable( idEntity *ent, idVec4 *color, idStr *text ) {
 	for ( int i = 0; i < selectableEntityClasses.Num(); i++ ) {
-		if ( ent->GetType() == selectableEntityClasses[i].typeInfo ) {
+		if ( ent->IsType( *selectableEntityClasses[i].typeInfo ) ) {
 			if ( text ) {
 				*text = selectableEntityClasses[i].textKey;
 			}
@@ -575,13 +575,18 @@ void idEditEntities::DisplayEntities( void ) {
 			selectableEntityClasses.Append( sit );
 			break;
 		case 6:
-			sit.typeInfo = &idEntity::Type;
+			sit.typeInfo = &idStaticEntity::Type;
 			sit.textKey = "name";
 			selectableEntityClasses.Append( sit );
 			break;
 		case 7:
-			sit.typeInfo = &idEntity::Type;
+			sit.typeInfo = &idStaticEntity::Type;
 			sit.textKey = "model";
+			selectableEntityClasses.Append( sit );
+			break;
+		case 8:
+			sit.typeInfo = &idEntity::Type;
+			sit.textKey = "name";
 			selectableEntityClasses.Append( sit );
 			break;
 		default:
@@ -618,10 +623,6 @@ void idEditEntities::DisplayEntities( void ) {
 			const idSoundShader * ss = declManager->FindSound( ent->spawnArgs.GetString( textKey ) );
 			if ( ss->HasDefaultSound() || ss->base->GetState() == DS_DEFAULTED ) {
 				color.Set( 1.0f, 0.0f, 1.0f, 1.0f );
-			}
-		} else if ( ent->GetType() == &idFuncEmitter::Type ) {
-			if ( ent->fl.selected ) {
-				drawArrows = true;
 			}
 		}
 

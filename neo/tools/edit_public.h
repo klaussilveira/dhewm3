@@ -117,4 +117,13 @@ void	MaterialEditorRun( void );
 void	MaterialEditorShutdown( void );
 void	MaterialEditorPrintConsole( const char *msg );
 
+// in-game Player Editor
+void	PlayerEditorInit( const idDict *spawnArgs );
+void	PlayerEditorShutdown( void );
+
+// in-game Entity Editor
+void	EntityEditorInit( const idDict *spawnArgs );
+void	EntityEditorShutdown( void );
+
+
 #endif /* !__EDIT_PUBLIC_H__ */

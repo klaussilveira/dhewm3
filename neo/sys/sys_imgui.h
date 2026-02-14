@@ -11,10 +11,14 @@ namespace D3 {
 namespace ImGuiHooks {
 
 enum D3ImGuiWindow {
-	D3_ImGuiWin_None        = 0,
-	D3_ImGuiWin_Settings    = 1, // advanced dhewm3 settings menu
-	D3_ImGuiWin_Demo        = 2, // ImGui demo window
-	// next should be 4, then 8, etc so a bitmask can be used
+	D3_ImGuiWin_None           = 0,
+	D3_ImGuiWin_Settings       = 1, // advanced dhewm3 settings menu
+	D3_ImGuiWin_Demo           = 2, // ImGui demo window
+	D3_ImGuiWin_EditorMode     = 4,
+	D3_ImGuiWin_ParticleEditor = 8,
+	D3_ImGuiWin_LightEditor    = 16,
+	D3_ImGuiWin_PlayerEditor   = 32,
+	D3_ImGuiWin_EntityEditor   = 64,
 };
 
 #ifndef IMGUI_DISABLE

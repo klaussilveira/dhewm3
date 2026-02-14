@@ -706,6 +706,16 @@ always_optimize_sourcefile(framework/minizip/unzip.cpp)
 
 add_globbed_headers(src_framework "framework")
 
+set(src_editor
+    editor/Editor.cpp
+    editor/EntityEditor.cpp
+    editor/LightEditor.cpp
+    editor/ParticleEditor.cpp
+    editor/PlayerEditor.cpp
+)
+
+add_globbed_headers(src_editor "editor")
+
 set(src_cm
 	cm/CollisionModel_contacts.cpp
 	cm/CollisionModel_contents.cpp
@@ -866,6 +876,7 @@ set(src_idlib
 add_globbed_headers(src_idlib "idlib")
 
 if(IMGUI)
+	set(TOOLS_DEFINES "ID_ALLOW_IMGUI_TOOLS")
 
 	if(SDL3)
 		set(src_imgui libs/imgui/backends/imgui_impl_sdl3.cpp)
@@ -887,6 +898,12 @@ set(src_imgui ${src_imgui}
 	sys/sys_imgui.h
 	sys/sys_imgui.cpp
 	sys/imgui_savestyle.cpp
+
+	# extras
+	libs/imgui/ImGuizmo.cpp
+	libs/imgui/ImGuizmo.h
+	libs/imgui/ImSequencer.cpp
+	libs/imgui/ImSequencer.h
 )
 else()
 set(src_imgui sys/sys_imgui.h)
@@ -1057,6 +1074,7 @@ set(src_debuggerServer
 set(src_core
 	${src_renderer}
 	${src_framework}
+	${src_editor}
 	${src_cm}
 	${src_dmap}
 	${src_aas}
@@ -1158,7 +1176,12 @@ if (TOOLS AND MFC_FOUND AND MSVC)
 	SET(CMAKE_MFC_FLAG 2)
 	set(TOOLS_DEFINES "ID_ALLOW_TOOLS;_AFXDLL")
 else()
-	set(src_editor_tools "tools/edit_stub.cpp" "tools/edit_public.h" "tools/debugger/debugger_common.h")
+	if(IMGUI)
+		set(src_editor_tools "tools/edit_imgui.cpp" "tools/edit_public.h" "tools/debugger/debugger_common.h")
+	else()
+		set(src_editor_tools "tools/edit_stub.cpp" "tools/edit_public.h" "tools/debugger/debugger_common.h")
+	endif()
+
 	list(APPEND src_editor_tools
 		${src_debuggerServer}
 	)
