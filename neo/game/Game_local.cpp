@@ -1734,7 +1734,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 
 	kv = dict->MatchPrefix( "model" );
 	while( kv ) {
-		if ( kv->GetValue().Length() ) {
+		if ( kv->GetValue().Length() && idStr::Icmp( kv->GetKey(), "modelscale" ) != 0 ) {
 			declManager->MediaPrint( "Precaching model %s\n", kv->GetValue().c_str() );
 			// precache model/animations
 			if ( declManager->FindType( DECL_MODELDEF, kv->GetValue(), false ) == NULL ) {
