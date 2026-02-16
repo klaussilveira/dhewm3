@@ -29,6 +29,7 @@ private:
 	idEntity*			selectedEntity;
 	idVec3				entityOrigin;
 	idMat3				entityAxis;
+	float				entityScale;
 	int					gizmoOperation;
 	int					gizmoMode;
 

@@ -69,6 +69,7 @@ public:
 							~idClipModel( void );
 
 	bool					LoadModel( const char *name );
+	bool					LoadModelScaled( const char *name, float scale );
 	void					LoadModel( const idTraceModel &trm );
 	void					LoadModel( const int renderModelHandle );
 

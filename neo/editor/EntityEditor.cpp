@@ -22,6 +22,7 @@ hcEntityEditor::hcEntityEditor( void ) {
 	gizmoMode = ImGuizmo::WORLD;
 	entityOrigin.Zero();
 	entityAxis.Identity();
+	entityScale = 1.0f;
 	showSpawnArgsSection = true;
 	showTransformSection = true;
 	propertyTableWidth = 120.0f;
@@ -100,6 +101,17 @@ void hcEntityEditor::RefreshEntityData( void ) {
 	// Fetch entity params from game
 	gameEdit->EntityGetOrigin( selectedEntity, entityOrigin );
 	gameEdit->EntityGetAxis( selectedEntity, entityAxis );
+
+	// Get modelscale from spawn args
+	const idDict* spawnArgs = gameEdit->EntityGetSpawnArgs( selectedEntity );
+	if ( spawnArgs != nullptr ) {
+		entityScale = spawnArgs->GetFloat( "modelscale", "1.0" );
+		if ( entityScale <= 0.0f ) {
+			entityScale = 1.0f;
+		}
+	} else {
+		entityScale = 1.0f;
+	}
 }
 
 void hcEntityEditor::ApplyEntityChanges( void ) {
@@ -133,7 +145,18 @@ void hcEntityEditor::ApplyEntityChanges( void ) {
 		newArgs.SetAngles( "rotation", angles );
 	}
 
+	// Handle modelscale
+	if ( entityScale != 1.0f && entityScale > 0.0f ) {
+		newArgs.SetFloat( "modelscale", entityScale );
+	} else {
+		newArgs.Set( "modelscale", "" ); // Delete if default
+	}
+
 	gameEdit->EntityChangeSpawnArgs( selectedEntity, &newArgs );
+
+	// Update render entity scale for immediate visual feedback
+	gameEdit->EntitySetModelScale( selectedEntity, entityScale );
+
 	gameEdit->EntityUpdateVisuals( selectedEntity );
 
 	// Update map file
@@ -142,6 +165,13 @@ void hcEntityEditor::ApplyEntityChanges( void ) {
 		gameEdit->MapSetEntityKeyVal( name, "rotation", "" );
 	} else {
 		gameEdit->MapSetEntityKeyVal( name, "rotation", entityAxis.ToString() );
+	}
+
+	// Update modelscale in map file
+	if ( entityScale != 1.0f && entityScale > 0.0f ) {
+		gameEdit->MapSetEntityKeyVal( name, "modelscale", va( "%.3f", entityScale ) );
+	} else {
+		gameEdit->MapSetEntityKeyVal( name, "modelscale", "" );
 	}
 }
 
@@ -178,6 +208,11 @@ void hcEntityEditor::DrawGizmoControls( void ) {
 	ImGui::SameLine();
 	if ( ImGui::RadioButton( "Rotate", gizmoOperation == ImGuizmo::ROTATE ) ) {
 		gizmoOperation = ImGuizmo::ROTATE;
+	}
+
+	ImGui::SameLine();
+	if ( ImGui::RadioButton( "Scale", gizmoOperation == ImGuizmo::SCALEU ) ) {
+		gizmoOperation = ImGuizmo::SCALEU;
 	}
 
 	ImGui::SameLine();
@@ -218,7 +253,9 @@ void hcEntityEditor::DrawGizmo( void ) {
 	gameEdit->EntityGetOrigin( ent, entOrigin );
 	gameEdit->EntityGetAxis( ent, entAxis );
 
-	idMat4 gizmoMatrix( entAxis, entOrigin );
+	// Build matrix with scale applied for ImGuizmo
+	idMat3 scaledAxis = entAxis * entityScale;
+	idMat4 gizmoMatrix( scaledAxis, entOrigin );
 	idMat4 manipulationMatrix = gizmoMatrix.Transpose();
 
 	// Set up ImGuizmo
@@ -237,16 +274,28 @@ void hcEntityEditor::DrawGizmo( void ) {
 		newOrigin.y = resultMatrix[1][3];
 		newOrigin.z = resultMatrix[2][3];
 
+		// Extract scaled axis from result matrix
+		idVec3 col0( resultMatrix[0][0], resultMatrix[1][0], resultMatrix[2][0] );
+		idVec3 col1( resultMatrix[0][1], resultMatrix[1][1], resultMatrix[2][1] );
+		idVec3 col2( resultMatrix[0][2], resultMatrix[1][2], resultMatrix[2][2] );
+
+		// Extract scale from column lengths (uniform scale = average)
+		float scaleX = col0.Length();
+		float scaleY = col1.Length();
+		float scaleZ = col2.Length();
+		float newScale = ( scaleX + scaleY + scaleZ ) / 3.0f;
+
+		// Normalize to get unscaled axis
 		idMat3 newAxis;
-		newAxis[0][0] = resultMatrix[0][0];
-		newAxis[0][1] = resultMatrix[1][0];
-		newAxis[0][2] = resultMatrix[2][0];
-		newAxis[1][0] = resultMatrix[0][1];
-		newAxis[1][1] = resultMatrix[1][1];
-		newAxis[1][2] = resultMatrix[2][1];
-		newAxis[2][0] = resultMatrix[0][2];
-		newAxis[2][1] = resultMatrix[1][2];
-		newAxis[2][2] = resultMatrix[2][2];
+		if ( scaleX > 0.001f ) {
+			newAxis[0] = col0 / scaleX;
+		}
+		if ( scaleY > 0.001f ) {
+			newAxis[1] = col1 / scaleY;
+		}
+		if ( scaleZ > 0.001f ) {
+			newAxis[2] = col2 / scaleZ;
+		}
 
 		const idDict* spawnArgs = gameEdit->EntityGetSpawnArgs( ent );
 		if ( spawnArgs ) {
@@ -255,16 +304,32 @@ void hcEntityEditor::DrawGizmo( void ) {
 			if ( gizmoOperation == ImGuizmo::TRANSLATE ) {
 				gameEdit->EntitySetOrigin( ent, newOrigin );
 				gameEdit->MapSetEntityKeyVal( name, "origin", newOrigin.ToString() );
+				entityOrigin = newOrigin;
 			} else if ( gizmoOperation == ImGuizmo::ROTATE ) {
 				gameEdit->EntitySetAxis( ent, newAxis );
 				gameEdit->MapSetEntityKeyVal( name, "rotation", newAxis.ToString() );
+				entityAxis = newAxis;
+			} else if ( gizmoOperation == ImGuizmo::SCALEU ) {
+				// Clamp scale to reasonable range
+				if ( newScale < 0.01f ) {
+					newScale = 0.01f;
+				} else if ( newScale > 100.0f ) {
+					newScale = 100.0f;
+				}
+
+				entityScale = newScale;
+
+				// Update render entity scale (for immediate visual feedback)
+				gameEdit->EntitySetModelScale( ent, entityScale );
+
+				// Update spawn args and map file
+				idDict newArgs;
+				newArgs.SetFloat( "modelscale", entityScale );
+				gameEdit->EntityChangeSpawnArgs( ent, &newArgs );
+				gameEdit->MapSetEntityKeyVal( name, "modelscale", va( "%.3f", entityScale ) );
 			}
 
 			gameEdit->EntityUpdateVisuals( ent );
-
-			// Update cached values
-			entityOrigin = newOrigin;
-			entityAxis = newAxis;
 		}
 	}
 }
@@ -322,6 +387,12 @@ void hcEntityEditor::DrawTransformSection( void ) {
 		ImGui::LabeledWidget( "Roll", [&]() {
 			if ( ImGui::DragFloat( "##roll", &angles.roll, dragSpeed, -180.0f, 180.0f, "%.1f" ) ) {
 				entityAxis = angles.ToMat3();
+				changed = true;
+			}
+		});
+
+		ImGui::LabeledWidget( "Scale", [&]() {
+			if ( ImGui::DragFloat( "##scale", &entityScale, 0.01f, 0.01f, 100.0f, "%.3f" ) ) {
 				changed = true;
 			}
 		});

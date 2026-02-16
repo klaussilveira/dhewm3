@@ -135,6 +135,8 @@ public:
 	void				Rotate( const idMat3 &rotation );
 						// shrink the model m units on all sides
 	void				Shrink( const float m );
+						// scale the model uniformly
+	void				Scale( const float s );
 						// compare
 	bool				Compare( const idTraceModel &trm ) const;
 	bool				operator==(	const idTraceModel &trm ) const;

@@ -1093,6 +1093,36 @@ void idTraceModel::Shrink( const float m ) {
 
 /*
 ============
+idTraceModel::Scale
+============
+*/
+void idTraceModel::Scale( const float s ) {
+	int i;
+
+	// scale all vertices
+	for ( i = 0; i < numVerts; i++ ) {
+		verts[i] *= s;
+	}
+
+	// scale offset
+	offset *= s;
+
+	// scale bounds
+	bounds[0] *= s;
+	bounds[1] *= s;
+
+	// scale polygon bounds and distances
+	for ( i = 0; i < numPolys; i++ ) {
+		polys[i].bounds[0] *= s;
+		polys[i].bounds[1] *= s;
+		polys[i].dist *= s;
+	}
+
+	// edge normals don't change for uniform scaling
+}
+
+/*
+============
 idTraceModel::Compare
 ============
 */

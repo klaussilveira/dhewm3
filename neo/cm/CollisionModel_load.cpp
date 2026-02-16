@@ -3702,3 +3702,335 @@ bool idCollisionModelManagerLocal::TrmFromModel( const char *modelName, idTraceM
 
 	return TrmFromModel( models[ handle ], trm );
 }
+
+/*
+==================
+idCollisionModelManagerLocal::ScaleNode_r
+
+Recursively scales the geometry data in a node tree.
+For uniform scaling, only positions and distances change - normals stay the same.
+==================
+*/
+void idCollisionModelManagerLocal::ScaleNode_r( cm_node_t *node, float scale ) {
+	cm_polygonRef_t *pref;
+	cm_brushRef_t *bref;
+	int i;
+
+	// scale polygons in this node
+	for ( pref = node->polygons; pref; pref = pref->next ) {
+		cm_polygon_t *p = pref->p;
+		// only scale each polygon once (they may be referenced in multiple nodes)
+		if ( p->checkcount != checkCount ) {
+			p->checkcount = checkCount;
+			// scale bounds
+			p->bounds[0] *= scale;
+			p->bounds[1] *= scale;
+			// scale plane distance (normal direction stays the same for uniform scaling)
+			p->plane[3] *= scale;
+		}
+	}
+
+	// scale brushes in this node
+	for ( bref = node->brushes; bref; bref = bref->next ) {
+		cm_brush_t *b = bref->b;
+		// only scale each brush once
+		if ( b->checkcount != checkCount ) {
+			b->checkcount = checkCount;
+			// scale bounds
+			b->bounds[0] *= scale;
+			b->bounds[1] *= scale;
+			// scale all brush plane distances
+			for ( i = 0; i < b->numPlanes; i++ ) {
+				b->planes[i][3] *= scale;
+			}
+		}
+	}
+
+	// scale node split plane distance (if not a leaf node)
+	if ( node->planeType != -1 ) {
+		node->planeDist *= scale;
+		// recurse into children
+		ScaleNode_r( node->children[0], scale );
+		ScaleNode_r( node->children[1], scale );
+	}
+}
+
+/*
+==================
+idCollisionModelManagerLocal::ScaleModelGeometry
+
+Scales all geometry in a collision model by the given uniform scale factor.
+==================
+*/
+void idCollisionModelManagerLocal::ScaleModelGeometry( cm_model_t *model, float scale ) {
+	int i;
+
+	// scale all vertices
+	for ( i = 0; i < model->numVertices; i++ ) {
+		model->vertices[i].p *= scale;
+	}
+
+	// edge normals stay the same direction for uniform scaling
+
+	// scale model bounds
+	model->bounds[0] *= scale;
+	model->bounds[1] *= scale;
+
+	// scale the node tree (including polygons and brushes)
+	checkCount++;
+	if ( model->node ) {
+		ScaleNode_r( model->node, scale );
+	}
+}
+
+/*
+==================
+idCollisionModelManagerLocal::CopyNode_r
+
+Recursively copies a node tree. The polygons and brushes are shared (not deep copied)
+since we will scale them in place after copying the model structure.
+==================
+*/
+cm_node_t *idCollisionModelManagerLocal::CopyNode_r( cm_model_t *destModel, cm_node_t *srcNode ) {
+	if ( !srcNode ) {
+		return NULL;
+	}
+
+	cm_node_t *destNode = AllocNode( destModel, NODE_BLOCK_SIZE_SMALL );
+	destNode->planeType = srcNode->planeType;
+	destNode->planeDist = srcNode->planeDist;
+	destNode->polygons = NULL;
+	destNode->brushes = NULL;
+	destNode->parent = NULL;
+
+	// copy polygon references
+	for ( cm_polygonRef_t *pref = srcNode->polygons; pref; pref = pref->next ) {
+		cm_polygonRef_t *newPref = AllocPolygonReference( destModel, REFERENCE_BLOCK_SIZE_SMALL );
+		newPref->p = pref->p;  // shared pointer - we'll copy polygons separately
+		newPref->next = destNode->polygons;
+		destNode->polygons = newPref;
+		destModel->numPolygonRefs++;
+	}
+
+	// copy brush references
+	for ( cm_brushRef_t *bref = srcNode->brushes; bref; bref = bref->next ) {
+		cm_brushRef_t *newBref = AllocBrushReference( destModel, REFERENCE_BLOCK_SIZE_SMALL );
+		newBref->b = bref->b;  // shared pointer - we'll copy brushes separately
+		newBref->next = destNode->brushes;
+		destNode->brushes = newBref;
+		destModel->numBrushRefs++;
+	}
+
+	// recurse into children
+	if ( srcNode->planeType != -1 ) {
+		destNode->children[0] = CopyNode_r( destModel, srcNode->children[0] );
+		destNode->children[1] = CopyNode_r( destModel, srcNode->children[1] );
+		if ( destNode->children[0] ) {
+			destNode->children[0]->parent = destNode;
+		}
+		if ( destNode->children[1] ) {
+			destNode->children[1]->parent = destNode;
+		}
+	} else {
+		destNode->children[0] = NULL;
+		destNode->children[1] = NULL;
+	}
+
+	destModel->numNodes++;
+
+	return destNode;
+}
+
+/*
+==================
+idCollisionModelManagerLocal::CopyPolygonsAndBrushes_r
+
+Recursively copies polygons and brushes, replacing shared pointers with new copies.
+==================
+*/
+void idCollisionModelManagerLocal::CopyPolygonsAndBrushes_r( cm_model_t *destModel, cm_node_t *node,
+									  idHashIndex &polygonHash, idHashIndex &brushHash,
+									  idList<cm_polygon_t*> &oldPolygons, idList<cm_polygon_t*> &newPolygons,
+									  idList<cm_brush_t*> &oldBrushes, idList<cm_brush_t*> &newBrushes ) {
+	cm_polygonRef_t *pref;
+	cm_brushRef_t *bref;
+	int i, key;
+
+	// copy polygons
+	for ( pref = node->polygons; pref; pref = pref->next ) {
+		cm_polygon_t *oldPoly = pref->p;
+		// check if we already copied this polygon
+		key = (intptr_t)oldPoly & 0xFFFF;
+		for ( i = polygonHash.First( key ); i >= 0; i = polygonHash.Next( i ) ) {
+			if ( oldPolygons[i] == oldPoly ) {
+				pref->p = newPolygons[i];
+				break;
+			}
+		}
+		if ( i < 0 ) {
+			// polygon not yet copied, create a copy
+			cm_polygon_t *newPoly = AllocPolygon( destModel, oldPoly->numEdges );
+			int size = sizeof( cm_polygon_t ) + ( oldPoly->numEdges - 1 ) * sizeof( newPoly->edges[0] );
+			memcpy( newPoly, oldPoly, size );
+			newPoly->checkcount = checkCount;  // mark as not yet scaled
+			// store mapping
+			oldPolygons.Append( oldPoly );
+			newPolygons.Append( newPoly );
+			polygonHash.Add( key, oldPolygons.Num() - 1 );
+			pref->p = newPoly;
+		}
+	}
+
+	// copy brushes
+	for ( bref = node->brushes; bref; bref = bref->next ) {
+		cm_brush_t *oldBrush = bref->b;
+		// check if we already copied this brush
+		key = (intptr_t)oldBrush & 0xFFFF;
+		for ( i = brushHash.First( key ); i >= 0; i = brushHash.Next( i ) ) {
+			if ( oldBrushes[i] == oldBrush ) {
+				bref->b = newBrushes[i];
+				break;
+			}
+		}
+		if ( i < 0 ) {
+			// brush not yet copied, create a copy
+			cm_brush_t *newBrush = AllocBrush( destModel, oldBrush->numPlanes );
+			int size = sizeof( cm_brush_t ) + ( oldBrush->numPlanes - 1 ) * sizeof( newBrush->planes[0] );
+			memcpy( newBrush, oldBrush, size );
+			newBrush->checkcount = checkCount;  // mark as not yet scaled
+			// store mapping
+			oldBrushes.Append( oldBrush );
+			newBrushes.Append( newBrush );
+			brushHash.Add( key, oldBrushes.Num() - 1 );
+			bref->b = newBrush;
+		}
+	}
+
+	// recurse into children
+	if ( node->planeType != -1 ) {
+		if ( node->children[0] ) {
+			CopyPolygonsAndBrushes_r( destModel, node->children[0],
+									  polygonHash, brushHash, oldPolygons, newPolygons, oldBrushes, newBrushes );
+		}
+		if ( node->children[1] ) {
+			CopyPolygonsAndBrushes_r( destModel, node->children[1],
+									  polygonHash, brushHash, oldPolygons, newPolygons, oldBrushes, newBrushes );
+		}
+	}
+}
+
+/*
+==================
+idCollisionModelManagerLocal::CopyModel
+
+Creates a deep copy of a collision model.
+==================
+*/
+cm_model_t *idCollisionModelManagerLocal::CopyModel( const cm_model_t *model ) {
+	cm_model_t *copy = AllocModel();
+
+	// copy basic properties
+	copy->name = model->name;
+	copy->bounds = model->bounds;
+	copy->contents = model->contents;
+	copy->isConvex = model->isConvex;
+
+	// copy vertices
+	copy->maxVertices = model->numVertices;
+	copy->numVertices = model->numVertices;
+	if ( model->numVertices > 0 ) {
+		copy->vertices = (cm_vertex_t *) Mem_Alloc( model->numVertices * sizeof( cm_vertex_t ) );
+		memcpy( copy->vertices, model->vertices, model->numVertices * sizeof( cm_vertex_t ) );
+	}
+
+	// copy edges
+	copy->maxEdges = model->numEdges;
+	copy->numEdges = model->numEdges;
+	if ( model->numEdges > 0 ) {
+		copy->edges = (cm_edge_t *) Mem_Alloc( model->numEdges * sizeof( cm_edge_t ) );
+		memcpy( copy->edges, model->edges, model->numEdges * sizeof( cm_edge_t ) );
+	}
+
+	// copy the node tree structure
+	copy->node = CopyNode_r( copy, model->node );
+
+	// now deep copy all polygons and brushes
+	if ( copy->node ) {
+		idHashIndex polygonHash( 1024, 1024 );
+		idHashIndex brushHash( 256, 256 );
+		idList<cm_polygon_t*> oldPolygons;
+		idList<cm_polygon_t*> newPolygons;
+		idList<cm_brush_t*> oldBrushes;
+		idList<cm_brush_t*> newBrushes;
+
+		checkCount++;
+		CopyPolygonsAndBrushes_r( copy, copy->node,
+								  polygonHash, brushHash, oldPolygons, newPolygons, oldBrushes, newBrushes );
+	}
+
+	// copy statistics
+	copy->numInternalEdges = model->numInternalEdges;
+	copy->numSharpEdges = model->numSharpEdges;
+	copy->numRemovedPolys = model->numRemovedPolys;
+	copy->numMergedPolys = model->numMergedPolys;
+
+	return copy;
+}
+
+/*
+==================
+idCollisionModelManagerLocal::LoadModelScaled
+
+Loads a collision model and creates a scaled copy.
+Returns a handle to the scaled model.
+==================
+*/
+cmHandle_t idCollisionModelManagerLocal::LoadModelScaled( const char *modelName, float scale ) {
+	idStr scaledName;
+	cmHandle_t baseHandle;
+
+	// validate scale - must be positive
+	if ( scale <= 0.0f ) {
+		common->Warning( "idCollisionModelManagerLocal::LoadModelScaled: invalid scale %.3f for '%s'", scale, modelName );
+		return LoadModel( modelName, false );
+	}
+
+	// if scale is 1.0 (or very close), just load the regular model
+	if ( idMath::Fabs( scale - 1.0f ) < 0.001f ) {
+		return LoadModel( modelName, false );
+	}
+
+	// create a unique name for this scaled model
+	scaledName.Format( "%s@scale_%.3f", modelName, scale );
+
+	// check if we already have this scaled model loaded
+	cmHandle_t handle = FindModel( scaledName.c_str() );
+	if ( handle >= 0 ) {
+		return handle;
+	}
+
+	// load the base model
+	baseHandle = LoadModel( modelName, false );
+	if ( baseHandle == 0 ) {
+		return 0;
+	}
+
+	// check if we have room for a new model
+	if ( numModels >= MAX_SUBMODELS ) {
+		common->Warning( "idCollisionModelManagerLocal::LoadModelScaled: no free slots for scaled model '%s'", scaledName.c_str() );
+		return 0;
+	}
+
+	// create a deep copy of the base model
+	cm_model_t *scaledModel = CopyModel( models[baseHandle] );
+	scaledModel->name = scaledName;
+
+	// scale all geometry
+	ScaleModelGeometry( scaledModel, scale );
+
+	// store the scaled model
+	models[numModels] = scaledModel;
+	numModels++;
+
+	return ( numModels - 1 );
+}

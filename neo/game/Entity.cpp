@@ -1087,6 +1087,36 @@ void idEntity::GetColor( idVec4 &out ) const {
 
 /*
 ================
+idEntity::SetModelScale
+================
+*/
+void idEntity::SetModelScale( float scale ) {
+	if ( scale <= 0.0f ) {
+		scale = 1.0f;
+	}
+	renderEntity.modelScale = scale;
+
+	// Scale render bounds to match
+	if ( renderEntity.hModel ) {
+		renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );
+		renderEntity.bounds[0] *= scale;
+		renderEntity.bounds[1] *= scale;
+	}
+
+	UpdateVisuals();
+}
+
+/*
+================
+idEntity::GetModelScale
+================
+*/
+float idEntity::GetModelScale( void ) const {
+	return renderEntity.modelScale;
+}
+
+/*
+================
 idEntity::UpdateAnimationControllers
 ================
 */
@@ -2483,6 +2513,37 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
 				if ( idClipModel::CheckModel( temp ) ) {
 					clipModel = new idClipModel( temp );
+				}
+			}
+		}
+	}
+
+	// apply modelscale to collision if set
+	float modelScale = spawnArgs.GetFloat( "modelscale", "0" );
+	if ( modelScale > 0.0f && modelScale != 1.0f && clipModel ) {
+		const idTraceModel *trm = clipModel->GetTraceModel();
+		if ( trm ) {
+			// trace model - scale the geometry directly
+			idTraceModel scaledTrm = *trm;
+			scaledTrm.Scale( modelScale );
+			delete clipModel;
+			clipModel = new idClipModel( scaledTrm );
+		} else {
+			// collision model - load a scaled version of the model
+			temp = spawnArgs.GetString( "model" );
+			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
+				idBounds originalBounds = clipModel->GetBounds();
+				delete clipModel;
+				clipModel = new idClipModel();
+				if ( !clipModel->LoadModelScaled( temp, modelScale ) ) {
+					// fallback to scaled bounding box
+					delete clipModel;
+					idBounds scaledBounds = originalBounds;
+					scaledBounds[0] *= modelScale;
+					scaledBounds[1] *= modelScale;
+					idTraceModel boxTrm;
+					boxTrm.SetupBox( scaledBounds );
+					clipModel = new idClipModel( boxTrm );
 				}
 			}
 		}

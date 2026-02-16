@@ -217,6 +217,8 @@ public:
 	virtual void			GetColor( idVec3 &out ) const;
 	virtual void			SetColor( const idVec4 &color );
 	virtual void			GetColor( idVec4 &out ) const;
+	void					SetModelScale( float scale );
+	float					GetModelScale( void ) const;
 	virtual void			FreeModelDef( void );
 	virtual void			FreeLightDef( void );
 	virtual void			Hide( void );

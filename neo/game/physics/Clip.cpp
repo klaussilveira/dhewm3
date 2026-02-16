@@ -233,6 +233,28 @@ bool idClipModel::LoadModel( const char *name ) {
 
 /*
 ================
+idClipModel::LoadModelScaled
+================
+*/
+bool idClipModel::LoadModelScaled( const char *name, float scale ) {
+	renderModelHandle = -1;
+	if ( traceModelIndex != -1 ) {
+		FreeTraceModel( traceModelIndex );
+		traceModelIndex = -1;
+	}
+	collisionModelHandle = collisionModelManager->LoadModelScaled( name, scale );
+	if ( collisionModelHandle ) {
+		collisionModelManager->GetModelBounds( collisionModelHandle, bounds );
+		collisionModelManager->GetModelContents( collisionModelHandle, contents );
+		return true;
+	} else {
+		bounds.Zero();
+		return false;
+	}
+}
+
+/*
+================
 idClipModel::LoadModel
 ================
 */

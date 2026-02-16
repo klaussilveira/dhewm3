@@ -300,6 +300,8 @@ public:
 
 	// get clip handle for model
 	cmHandle_t		LoadModel( const char *modelName, const bool precache );
+	// get clip handle for a scaled model (creates a scaled copy if needed)
+	cmHandle_t		LoadModelScaled( const char *modelName, float scale );
 	// sets up a trace model for collision with other trace models
 	cmHandle_t		SetupTrmModel( const idTraceModel &trm, const idMaterial *material );
 	// create trace model from a collision model, returns true if succesfull
@@ -472,6 +474,15 @@ private:			// CollisionMap_load.cpp
 	cm_model_t *	LoadRenderModel( const char *fileName );					// ASE/LWO models
 	bool			TrmFromModel_r( idTraceModel &trm, cm_node_t *node );
 	bool			TrmFromModel( const cm_model_t *model, idTraceModel &trm );
+					// model scaling
+	cm_model_t *	CopyModel( const cm_model_t *model );
+	cm_node_t *		CopyNode_r( cm_model_t *destModel, cm_node_t *srcNode );
+	void			CopyPolygonsAndBrushes_r( cm_model_t *destModel, cm_node_t *node,
+							idHashIndex &polygonHash, idHashIndex &brushHash,
+							idList<cm_polygon_t*> &oldPolygons, idList<cm_polygon_t*> &newPolygons,
+							idList<cm_brush_t*> &oldBrushes, idList<cm_brush_t*> &newBrushes );
+	void			ScaleModelGeometry( cm_model_t *model, float scale );
+	void			ScaleNode_r( cm_node_t *node, float scale );
 
 private:			// CollisionMap_files.cpp
 					// writing

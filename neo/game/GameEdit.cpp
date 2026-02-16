@@ -842,6 +842,17 @@ void idGameEdit::EntitySetColor( idEntity *ent, const idVec3 color ) {
 
 /*
 ================
+idGameEdit::EntitySetModelScale
+================
+*/
+void idGameEdit::EntitySetModelScale( idEntity *ent, float scale ) {
+	if ( ent ) {
+		ent->SetModelScale( scale );
+	}
+}
+
+/*
+================
 idGameEdit::EntityTranslate
 ================
 */

@@ -103,6 +103,8 @@ public:
 
 	// Gets the clip handle for a model.
 	virtual cmHandle_t		LoadModel( const char *modelName, const bool precache ) = 0;
+	// Gets the clip handle for a scaled model (creates a scaled copy if needed).
+	virtual cmHandle_t		LoadModelScaled( const char *modelName, float scale ) = 0;
 	// Sets up a trace model for collision with other trace models.
 	virtual cmHandle_t		SetupTrmModel( const idTraceModel &trm, const idMaterial *material ) = 0;
 	// Creates a trace model from a collision model, returns true if succesfull.
