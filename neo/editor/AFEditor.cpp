@@ -1054,7 +1054,8 @@ void hcAFEditor::DrawBodyList( void ) {
     }
 
     ImGui::Text( "Bodies" );
-    ImGui::SameLine( ImGui::GetContentRegionAvail().x - 200 );
+    float bw = ImGui::CalcButtonWidth( "New##body" ) + ImGui::CalcButtonWidth( "Rename##body" ) + ImGui::CalcButtonWidth( "Delete##body" ) + ImGui::GetStyle().ItemSpacing.x * 2;
+    ImGui::SameLineRight( bw );
 
     // Disable New button if we have at least as many bodies as joints
     // (can't have more bodies than joints)
@@ -1428,7 +1429,8 @@ void hcAFEditor::DrawConstraintList( void ) {
     }
 
     ImGui::Text( "Constraints" );
-    ImGui::SameLine( ImGui::GetContentRegionAvail().x - 200 );
+    float cw = ImGui::CalcButtonWidth( "New##constraint" ) + ImGui::CalcButtonWidth( "Rename##constraint" ) + ImGui::CalcButtonWidth( "Delete##constraint" ) + ImGui::GetStyle().ItemSpacing.x * 2;
+    ImGui::SameLineRight( cw );
 
     // Disable New button if there are no bodies (need at least one body for a constraint)
     bool canAddConstraint = (af->bodies.Num() >= 1);
@@ -2582,7 +2584,8 @@ void hcAFEditor::DrawModelBrowser( void ) {
         // Footer
         ImGui::Text( "Current: %s", af ? af->model.c_str() : "<none>" );
 
-        ImGui::SameLine( ImGui::GetContentRegionAvail().x - 130 );
+        float mbw = ImGui::CalcButtonWidth( "Cancel" ) + ImGui::CalcButtonWidth( "OK" ) + ImGui::GetStyle().ItemSpacing.x;
+        ImGui::SameLineRight( mbw );
         if ( ImGui::Button( "Cancel" ) ) {
             showModelBrowser = false;
             ImGui::CloseCurrentPopup();
@@ -2679,15 +2682,16 @@ void hcAFEditor::DrawSkinBrowser( void ) {
         // Footer
         ImGui::Text( "Current: %s", af ? (af->skin.IsEmpty() ? "<None>" : af->skin.c_str()) : "<none>" );
 
-        ImGui::SameLine( ImGui::GetContentRegionAvail().x - 130 );
-        if ( ImGui::Button( "Cancel", ImVec2(60, 0) ) ) {
+        float sbw = ImGui::CalcButtonWidth( "Cancel" ) + ImGui::CalcButtonWidth( "OK" ) + ImGui::GetStyle().ItemSpacing.x;
+        ImGui::SameLineRight( sbw );
+        if ( ImGui::Button( "Cancel" ) ) {
             showSkinBrowser = false;
             ImGui::CloseCurrentPopup();
         }
 
         ImGui::SameLine();
 
-        if ( ImGui::Button( "OK", ImVec2(60, 0) ) ) {
+        if ( ImGui::Button( "OK" ) ) {
             showSkinBrowser = false;
             ImGui::CloseCurrentPopup();
         }

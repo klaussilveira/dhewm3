@@ -1810,7 +1810,8 @@ void hcParticleEditor::DrawMaterialBrowser( void ) {
 		// Footer
 		ImGui::Text( "Current: %s", stage->material ? stage->material->GetName() : "<none>" );
 
-		ImGui::SameLine( ImGui::GetContentRegionAvail().x - 120 );
+		float mbw = ImGui::CalcButtonWidth( "Cancel" ) + ImGui::CalcButtonWidth( "OK" ) + ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SameLineRight( mbw );
 		if ( ImGui::Button( "Cancel" ) ) {
 			showMaterialBrowser = false;
 			ImGui::CloseCurrentPopup();

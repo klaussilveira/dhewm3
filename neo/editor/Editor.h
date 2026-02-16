@@ -96,6 +96,33 @@ inline void AddTooltip( const char* text )
     }
 }
 
+// Calculate the width a button will occupy based on its label text.
+// Handles ImGui ID suffixes (##id) correctly by measuring only the visible portion.
+inline float CalcButtonWidth( const char* label )
+{
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const char* hashPos = strstr( label, "##" );
+    float textWidth;
+    if ( hashPos ) {
+        textWidth = ImGui::CalcTextSize( label, hashPos ).x;
+    } else {
+        textWidth = ImGui::CalcTextSize( label ).x;
+    }
+    return textWidth + style.FramePadding.x * 2.0f;
+}
+
+// Position cursor to right-align items of the given total width on the current line.
+// Call after placing left-aligned content (e.g. Text), then place your buttons.
+inline void SameLineRight( float totalWidth )
+{
+    float offset = ImGui::GetContentRegionAvail().x - totalWidth;
+    if ( offset > 0 ) {
+        ImGui::SameLine( offset );
+    } else {
+        ImGui::SameLine();
+    }
+}
+
 inline bool SliderFloatWidget( const char* label, float* value, float minVal, float maxVal, const char* tooltip = nullptr )
 {
     bool changed = ImGui::SliderFloat( label, value, minVal, maxVal, "%.3f" );

@@ -88,7 +88,7 @@ void hcSceneInspector::DrawEntityList( void ) {
 
 	ImGui::SameLine();
 
-	ImGui::SetNextItemWidth( ImGui::GetContentRegionAvail().x - 80 );
+	ImGui::SetNextItemWidth( ImGui::GetContentRegionAvail().x - ImGui::CalcButtonWidth( "Refresh" ) - ImGui::GetStyle().ItemSpacing.x );
 	if ( ImGui::InputText( "##EntityFilter", filterBuffer, sizeof(filterBuffer) ) ) {
 		// Filter changed, reset selection
 		selectedIndex = -1;

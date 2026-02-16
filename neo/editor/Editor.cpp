@@ -430,7 +430,8 @@ void hcEditorMenuBar::DrawSpawnDialog( void ) {
 		ImGui::EndChild();
 
 		ImGui::Text( "Entities: %d / %d", displayCount, entityDefNames.Num() );
-		ImGui::SameLine( ImGui::GetContentRegionAvail().x - 130 );
+		float dbw = ImGui::CalcButtonWidth( "Cancel" ) + ImGui::CalcButtonWidth( "Spawn" ) + ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SameLineRight( dbw );
 
 		bool canSpawn = (selectedEntityDefIndex >= 0 && selectedEntityDefIndex < entityDefNames.Num());
 		if ( !canSpawn ) {
