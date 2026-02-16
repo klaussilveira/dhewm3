@@ -463,6 +463,33 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 	modelMatrix[15] = 1;
 }
 
+void R_AxisToModelMatrixWithScale( const idMat3 &axis, const idVec3 &origin, float scale, float modelMatrix[16] ) {
+	// treat scale <= 0 as no scaling (1.0) for backward compatibility
+	if ( scale <= 0.0f ) {
+		scale = 1.0f;
+	}
+
+	modelMatrix[0] = axis[0][0] * scale;
+	modelMatrix[4] = axis[1][0] * scale;
+	modelMatrix[8] = axis[2][0] * scale;
+	modelMatrix[12] = origin[0];
+
+	modelMatrix[1] = axis[0][1] * scale;
+	modelMatrix[5] = axis[1][1] * scale;
+	modelMatrix[9] = axis[2][1] * scale;
+	modelMatrix[13] = origin[1];
+
+	modelMatrix[2] = axis[0][2] * scale;
+	modelMatrix[6] = axis[1][2] * scale;
+	modelMatrix[10] = axis[2][2] * scale;
+	modelMatrix[14] = origin[2];
+
+	modelMatrix[3] = 0;
+	modelMatrix[7] = 0;
+	modelMatrix[11] = 0;
+	modelMatrix[15] = 1;
+}
+
 
 // FIXME: these assume no skewing or scaling transforms
 

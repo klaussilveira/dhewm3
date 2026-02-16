@@ -122,11 +122,12 @@ typedef struct renderEntity_s {
 	int						allowSurfaceInViewID;
 
 	// positioning
-	// axis rotation vectors must be unit length for many
-	// R_LocalToGlobal functions to work, so don't scale models!
 	// axis vectors are [0] = forward, [1] = left, [2] = up
 	idVec3					origin;
 	idMat3					axis;
+
+	// uniform scale factor for visual rendering (does not affect collision)
+	float					modelScale;
 
 	// texturing
 	const idMaterial *		customShader;			// if non-0, all surfaces will use this

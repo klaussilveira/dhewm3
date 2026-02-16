@@ -273,7 +273,7 @@ void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEn
 
 	def->parms = *re;
 
-	R_AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
+	R_AxisToModelMatrixWithScale( def->parms.axis, def->parms.origin, def->parms.modelScale, def->modelMatrix );
 
 	def->lastModifiedFrameNum = tr.frameCount;
 	if ( session->writeDemo && def->archived ) {

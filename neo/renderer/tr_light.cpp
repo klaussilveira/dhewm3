@@ -403,7 +403,7 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def ) {
 	vModel->modelDepthHack = def->parms.modelDepthHack;
 	vModel->weaponDepthHack = def->parms.weaponDepthHack;
 
-	R_AxisToModelMatrix( def->parms.axis, def->parms.origin, vModel->modelMatrix );
+	R_AxisToModelMatrixWithScale( def->parms.axis, def->parms.origin, def->parms.modelScale, vModel->modelMatrix );
 
 	// we may not have a viewDef if we are just creating shadows at entity creation time
 	if ( tr.viewDef ) {
@@ -639,7 +639,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			if ( edef->viewCount == tr.viewCount ) {
 				m = edef->viewEntity->modelMatrix;
 			} else {
-				R_AxisToModelMatrix( edef->parms.axis, edef->parms.origin, modelMatrix );
+				R_AxisToModelMatrixWithScale( edef->parms.axis, edef->parms.origin, edef->parms.modelScale, modelMatrix );
 				m = modelMatrix;
 			}
 

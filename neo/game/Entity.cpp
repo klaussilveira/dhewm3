@@ -302,6 +302,14 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	// check noselfshadows flag
 	renderEntity->noSelfShadow = args->GetBool( "noselfshadows" );
 
+	// get model scale
+	renderEntity->modelScale = args->GetFloat( "modelscale", "0" );
+	if ( renderEntity->modelScale > 0.0f && renderEntity->hModel ) {
+		// scale the bounds to match the visual scale for proper culling
+		renderEntity->bounds[0] *= renderEntity->modelScale;
+		renderEntity->bounds[1] *= renderEntity->modelScale;
+	}
+
 	// init any guis, including entity-specific states
 	for( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {
 		temp = args->GetString( i == 0 ? "gui" : va( "gui%d", i + 1 ) );

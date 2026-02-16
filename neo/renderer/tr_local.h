@@ -1153,6 +1153,7 @@ bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
 
 void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] );
+void R_AxisToModelMatrixWithScale( const idMat3 &axis, const idVec3 &origin, float scale, float modelMatrix[16] );
 
 // note that many of these assume a normalized matrix, and will not work with scaled axis
 void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );

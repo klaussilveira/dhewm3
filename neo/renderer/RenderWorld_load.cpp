@@ -669,7 +669,7 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 		def->parms.axis[1][1] = 1;
 		def->parms.axis[2][2] = 1;
 
-		R_AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
+		R_AxisToModelMatrixWithScale( def->parms.axis, def->parms.origin, def->parms.modelScale, def->modelMatrix );
 
 		// in case an explicit shader is used on the world, we don't
 		// want it to have a 0 alpha or color
