@@ -2529,8 +2529,11 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis ) {
 			delete clipModel;
 			clipModel = new idClipModel( scaledTrm );
 		} else {
-			// collision model - load a scaled version of the model
-			temp = spawnArgs.GetString( "model" );
+			// collision model - load a scaled version of the collision source
+			temp = spawnArgs.GetString( "clipmodel" );
+			if ( !temp || !temp[0] ) {
+				temp = spawnArgs.GetString( "model" );
+			}
 			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
 				idBounds originalBounds = clipModel->GetBounds();
 				delete clipModel;
