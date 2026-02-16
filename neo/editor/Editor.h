@@ -21,6 +21,7 @@ public:
 	void				Draw( void );
 	bool				IsTranslucent( void ) const { return translucent; }
 	void				SetTranslucent( bool enable );
+	void				OpenSpawnDialog( void );
 
 private:
 	bool				translucent;
@@ -38,7 +39,6 @@ private:
 	void				DrawReloadMenu( void );
 	void				DrawSpawnDialog( void );
 	void				EnumEntityDefs( void );
-	void				OpenSpawnDialog( void );
 
 	void				DrawCvarToggle( const char* label, const char* cvarName, const char* tooltip = nullptr );
 	void				DrawCvarIntCombo( const char* label, const char* cvarName, const char** options, int numOptions, const char* tooltip = nullptr );

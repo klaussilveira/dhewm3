@@ -308,6 +308,10 @@ public:
 	virtual void				PlayerGetViewAngles( idAngles &angles ) const;
 	virtual void				PlayerGetEyePosition( idVec3 &org ) const;
 
+	// Entity enumeration for scene inspection.
+	virtual int					GetNumSpawnedEntities( void ) const;
+	virtual bool				GetSpawnedEntityInfo( int index, idStr &name, idStr &classname, idVec3 &origin ) const;
+
 	// In game map editing support.
 	virtual const idDict *		MapGetEntityDict( const char *name ) const;
 	virtual void				MapSave( const char *path = NULL ) const;

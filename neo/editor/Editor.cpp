@@ -14,6 +14,7 @@
 #include "ParticleEditor.h"
 #include "PlayerEditor.h"
 #include "AFEditor.h"
+#include "SceneInspector.h"
 
 hcEditorMenuBar*	editorMenuBar = nullptr;
 static bool			editorModeActive = false;
@@ -143,6 +144,15 @@ void hcEditorMenuBar::DrawWindowMenu( void ) {
 			}
 		}
 
+		bool sceneInspectorOpen = (mask & D3::ImGuiHooks::D3_ImGuiWin_SceneInspector) != 0;
+		if ( ImGui::MenuItem( "Scene Inspector", nullptr, sceneInspectorOpen ) ) {
+			if ( sceneInspectorOpen ) {
+				D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_SceneInspector );
+			} else {
+				D3::ImGuiHooks::OpenWindow( D3::ImGuiHooks::D3_ImGuiWin_SceneInspector );
+			}
+		}
+
 		ImGui::Separator();
 
 		if ( ImGui::MenuItem( "Translucent Windows", nullptr, translucent ) ) {
@@ -163,6 +173,7 @@ void hcEditorMenuBar::DrawWindowMenu( void ) {
 			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_PlayerEditor );
 			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_EntityEditor );
 			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_AFEditor );
+			D3::ImGuiHooks::CloseWindow( D3::ImGuiHooks::D3_ImGuiWin_SceneInspector );
 		}
 
 		ImGui::EndMenu();
@@ -530,6 +541,9 @@ void Editor_Init( void ) {
 	if ( afEditor == nullptr ) {
 		afEditor = new hcAFEditor();
 	}
+	if ( sceneInspector == nullptr ) {
+		sceneInspector = new hcSceneInspector();
+	}
 }
 
 void Editor_Shutdown( void ) {
@@ -556,6 +570,10 @@ void Editor_Shutdown( void ) {
 	if ( afEditor ) {
 		delete afEditor;
 		afEditor = nullptr;
+	}
+	if ( sceneInspector ) {
+		delete sceneInspector;
+		sceneInspector = nullptr;
 	}
 
 	if ( editorMenuBar ) {
@@ -593,6 +611,9 @@ void Editor_Draw( void ) {
 
 	if ( afEditor ) {
 		afEditor->Draw();
+	}
+	if ( sceneInspector ) {
+		sceneInspector->Draw();
 	}
 }
 

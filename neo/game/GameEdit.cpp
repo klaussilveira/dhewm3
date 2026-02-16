@@ -992,6 +992,38 @@ void idGameEdit::PlayerGetEyePosition( idVec3 &org ) const {
 	org = gameLocal.GetLocalPlayer()->GetEyePosition();
 }
 
+/*
+================
+idGameEdit::GetNumSpawnedEntities
+================
+*/
+int idGameEdit::GetNumSpawnedEntities( void ) const {
+	int count = 0;
+	for ( idEntity *ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+		count++;
+	}
+	return count;
+}
+
+/*
+================
+idGameEdit::GetSpawnedEntityInfo
+================
+*/
+bool idGameEdit::GetSpawnedEntityInfo( int index, idStr &name, idStr &classname, idVec3 &origin ) const {
+	int count = 0;
+	for ( idEntity *ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+		if ( count == index ) {
+			name = ent->name;
+			classname = ent->GetClassname();
+			origin = ent->GetPhysics()->GetOrigin();
+			return true;
+		}
+		count++;
+	}
+	return false;
+}
+
 
 /*
 ================

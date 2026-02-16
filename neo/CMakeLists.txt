@@ -713,6 +713,7 @@ set(src_editor
     editor/ParticleEditor.cpp
     editor/PlayerEditor.cpp
     editor/AFEditor.cpp
+    editor/SceneInspector.cpp
 )
 
 add_globbed_headers(src_editor "editor")
