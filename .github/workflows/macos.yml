@@ -1,9 +1,7 @@
 name: Testbuild for MacOS
 run-name: testbuild_macos
 on:
-  push:
-    branches:
-      - 'master'
+  push: ~
   pull_request:
     types:
       - edited

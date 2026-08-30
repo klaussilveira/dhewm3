@@ -1,9 +1,7 @@
 name: Testbuild for x86 and x86_64 Windows
 run-name: testbuild_windows
 on:
-  push:
-    branches:
-      - 'master'
+  push: ~
   pull_request:
     types:
       - edited
