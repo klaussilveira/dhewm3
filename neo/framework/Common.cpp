@@ -114,6 +114,12 @@ idCVar com_dbgServerAdr( "com_dbgServerAdr", "localhost", CVAR_SYSTEM | CVAR_ARC
 
 idCVar com_product_lang_ext( "com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files." );
 
+
+// KS: interpolated rendering
+idCVar com_interpolate( "com_interpolate", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_ARCHIVE, "decouple rendering from the game tic and interpolate between frames" );
+idCVar com_maxFps( "com_maxFps", "0", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "when com_interpolate is set, cap the render framerate to this value (0 = uncapped, rely on vsync)", 0, 1000 );
+float com_interpFraction = 1.0f; // how far we are into the current tic when the frame is drawn
+
 // in the high-fps branch, the next three values will be set based on com_gameHz
 // here (in the old 60fps-only code) they're const and just to reduce difference to the other branch
 //const int    com_gameHzVal = 60;
@@ -263,6 +269,9 @@ idCommon *		common = &commonLocal;
 
 static double nextTicTime = 0.0;
 
+// KS: interpolated rendering
+static double nextRenderTime = 0.0;
+
 // DG: updates the tic number based on the (real) time expired since it has last been updated
 void Com_UpdateTicNumber() {
 	D3P_CPUSampleFn();
@@ -315,6 +324,17 @@ void Com_WaitForNextTicStart() {
 		Sys_SleepUntilPrecise( nextTicTime );
 	}
 	Com_UpdateFrameTime();
+}
+
+// KS: update the interpolation fraction based how far we are in the frame
+void Com_UpdateInterpFraction() {
+	if ( com_interpolate.GetBool() ) {
+		double now = Sys_MillisecondsPrecise();
+		double ticStart = nextTicTime - com_preciseFrameLengthMS;
+		com_interpFraction = idMath::ClampFloat( 0.0f, 1.0f, (float)( ( now - ticStart ) / com_preciseFrameLengthMS ) );
+	} else {
+		com_interpFraction = 1.0f;
+	}
 }
 
 /*
@@ -470,7 +490,7 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 		if ( com_editors & EDITOR_DEBUGGER )
 			DebuggerServerPrint( msg );
 		else
-			// only echo to dedicated console and early console when debugger is not running so no 
+			// only echo to dedicated console and early console when debugger is not running so no
 			// deadlocks occur if engine functions called from the debuggerthread trace stuff..
 			Sys_Printf( "%s", msg );
 	} else {
@@ -1207,7 +1227,7 @@ int	idCommonLocal::KeyState( int key ) {
 ==================
 Com_Editor_f
 
-  we can start the editor dynamically, but we won't ever get back
+	we can start the editor dynamically, but we won't ever get back
 ==================
 */
 static void Com_Editor_f( const idCmdArgs &args ) {
@@ -1222,7 +1242,7 @@ Com_ScriptDebugger_f
 static void Com_ScriptDebugger_f( const idCmdArgs &args ) {
 	// Make sure it wasnt on the command line
 	if ( !( com_editors & EDITOR_DEBUGGER ) ) {
-		
+
 		//start debugger server if needed
 		if ( !com_enableDebuggerServer.GetBool() )
 			com_enableDebuggerServer.SetBool( true );
@@ -2526,11 +2546,13 @@ void idCommonLocal::Frame( void ) {
 
 		if ( idAsyncNetwork::IsActive() ) {
 			if ( idAsyncNetwork::serverDedicated.GetInteger() != 1 ) {
+				Com_UpdateInterpFraction();
 				session->GuiFrameEvents();
 				session->UpdateScreen( false );
 			}
 		} else {
 			session->Frame();
+			Com_UpdateInterpFraction();
 
 			// normal, in-sequence screen update
 			session->UpdateScreen( false );
@@ -2560,7 +2582,20 @@ void idCommonLocal::Frame( void ) {
 		if ( com_editors == 0 )
 #endif
 		{
-			if ( com_timescale.GetFloat() == 1.0f && GLimp_GetSwapInterval() != 0
+			// KS: interpolated rendering
+			if ( com_interpolate.GetBool() ) {
+				int maxFps = com_maxFps.GetInteger();
+				if ( maxFps > 0 && com_timescale.GetFloat() == 1.0f ) {
+					double now = Sys_MillisecondsPrecise();
+					double frameLen = 1000.0 / maxFps;
+					if ( nextRenderTime < now ) {
+						nextRenderTime = now + frameLen;
+					} else {
+						nextRenderTime += frameLen;
+					}
+					Sys_SleepUntilPrecise( nextRenderTime );
+				}
+			} else if ( com_timescale.GetFloat() == 1.0f && GLimp_GetSwapInterval() != 0
 				&& fabsf(60.0f - GLimp_GetDisplayRefresh()) < 1.0f ) {
 				// if we're using vsync and the display is running at about 60Hz, start next tic
 				// immediately so our internal tic time and vsync don't drift apart
@@ -2965,17 +3000,17 @@ static bool checkForHelp(int argc, char **argv)
 #ifdef UINTPTR_MAX // DG: make sure D3_SIZEOFPTR is consistent with reality
 
 #if D3_SIZEOFPTR == 4
-  #if UINTPTR_MAX != 0xFFFFFFFFUL
-    #error "CMake assumes that we're building for a 32bit architecture, but UINTPTR_MAX doesn't match!"
-  #endif
+	#if UINTPTR_MAX != 0xFFFFFFFFUL
+		#error "CMake assumes that we're building for a 32bit architecture, but UINTPTR_MAX doesn't match!"
+	#endif
 #elif D3_SIZEOFPTR == 8
-  #if UINTPTR_MAX != 18446744073709551615ULL
-    #error "CMake assumes that we're building for a 64bit architecture, but UINTPTR_MAX doesn't match!"
-  #endif
+	#if UINTPTR_MAX != 18446744073709551615ULL
+		#error "CMake assumes that we're building for a 64bit architecture, but UINTPTR_MAX doesn't match!"
+	#endif
 #else
-  // Hello future person with a 128bit(?) CPU, I hope the future doesn't suck too much and that you don't still use CMake.
-  // Also, please adapt this check and send a pull request (or whatever way we have to send patches in the future)
-  #error "D3_SIZEOFPTR should really be 4 (for 32bit targets) or 8 (for 64bit targets), what kind of machine is this?!"
+	// Hello future person with a 128bit(?) CPU, I hope the future doesn't suck too much and that you don't still use CMake.
+	// Also, please adapt this check and send a pull request (or whatever way we have to send patches in the future)
+	#error "D3_SIZEOFPTR should really be 4 (for 32bit targets) or 8 (for 64bit targets), what kind of machine is this?!"
 #endif
 
 #endif // UINTPTR_MAX defined
@@ -2990,7 +3025,7 @@ void idCommonLocal::Init( int argc, char **argv ) {
 	// in case UINTPTR_MAX isn't defined (or wrong), do a runtime check at startup
 	if ( D3_SIZEOFPTR != sizeof(void*) ) {
 		Sys_Error( "Something went wrong in your build: CMake assumed that sizeof(void*) == %d but in reality it's %d!\n",
-		           (int)D3_SIZEOFPTR, (int)sizeof(void*) );
+							 (int)D3_SIZEOFPTR, (int)sizeof(void*) );
 	}
 
 	if(checkForHelp(argc, argv))
@@ -3050,15 +3085,15 @@ void idCommonLocal::Init( int argc, char **argv ) {
 	 *  * https://github.com/libsdl-org/SDL/issues/4039
 	 *  * https://github.com/libsdl-org/SDL/issues/3656 */
 	SDL_SetHint( SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "1" );
-  #ifdef SDL_HINT_ENABLE_SCREEN_KEYBOARD
+	#ifdef SDL_HINT_ENABLE_SCREEN_KEYBOARD
 	SDL_SetHint( SDL_HINT_ENABLE_SCREEN_KEYBOARD, "0" );
-  #else
+	#else
 	// fallback for older SDL2 versions, maybe at least the runtime version is new enough
 	// for this hint if the compile time SDL2 version wasn't (and if not this won't hurt)
 	if (SDL_getenv("SDL_ENABLE_SCREEN_KEYBOARD") == NULL) {
 		SDL_setenv("SDL_ENABLE_SCREEN_KEYBOARD", "0", 0);
 	}
-  #endif
+	#endif
 #endif
 
 	try {
@@ -3098,12 +3133,12 @@ void idCommonLocal::Init( int argc, char **argv ) {
 		int sdlvmicro = SDL_VERSIONNUM_MICRO(sdlv);
 		Printf( "%s using SDL v%d.%d.%d\n", version.string, sdlvmaj, sdlvmin, sdlvmicro );
 #else
-  #if SDL_VERSION_ATLEAST(2, 0, 0)
+	#if SDL_VERSION_ATLEAST(2, 0, 0)
 		SDL_version sdlv;
 		SDL_GetVersion(&sdlv);
-  #else
+	#else
 		SDL_version sdlv = *SDL_Linked_Version();
-  #endif
+	#endif
 		Printf( "%s using SDL v%u.%u.%u\n",
 				version.string, sdlv.major, sdlv.minor, sdlv.patch );
 #endif

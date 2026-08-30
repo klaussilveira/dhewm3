@@ -176,6 +176,9 @@ public:
 
 	const char			*GetAuthMsg( void );
 
+	// KS: interpolated rendering
+	bool				InterpolatedRender();
+
 	//=====================================
 
 	static idCVar		com_showAngles;

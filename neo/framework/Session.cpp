@@ -2728,6 +2728,11 @@ void idSessionLocal::Frame() {
 		minTic = latchedTicNumber;
 	}
 
+	// KS: interpolated rendering
+	if ( InterpolatedRender() ) {
+		minTic = latchedTicNumber;
+	}
+
 	while( 1 ) {
 		latchedTicNumber = com_ticNumber;
 		if ( latchedTicNumber >= minTic ) {
@@ -3449,4 +3454,13 @@ idSessionLocal::GetAuthMsg
 */
 const char *idSessionLocal::GetAuthMsg( void ) {
 	return authMsg.c_str();
+}
+
+/*
+===============
+idSessionLocal::InterpolatedRender
+===============
+*/
+bool idSessionLocal::InterpolatedRender( void ) {
+	return com_interpolate.GetBool() && !readDemo && !writeDemo && !aviCaptureMode;
 }
