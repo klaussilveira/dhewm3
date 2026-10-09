@@ -288,10 +288,12 @@ idSmokeParticles::UpdateRenderEntity
 */
 bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) {
 
+	// FIXME: re-use model surfaces
+	renderEntity->hModel->InitEmpty( smokeParticle_SnapshotName );
+
 	// this may be triggered by a model trace or other non-view related source,
 	// to which we should look like an empty model
 	if ( !renderView ) {
-		renderEntity->hModel->InitEmpty( smokeParticle_SnapshotName );
 		return false;
 	}
 
@@ -300,9 +302,6 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 		return false;
 	}
 	currentParticleTime = renderView->time;
-
-	// FIXME: re-use model surfaces
-	renderEntity->hModel->InitEmpty( smokeParticle_SnapshotName );
 
 	particleGen_t g;
 
